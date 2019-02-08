@@ -1,16 +1,24 @@
 import requests
 from bs4 import BeautifulSoup
-import os.path
 import json
+import os.path
 
-discordWebhook = ''  # Enter your discord webhook.
+discordWebhook = "" # Enter your discord webhook.
 filename = 'links_posted.txt'
+
+if os.path.isfile('config.json'):
+    try:
+        with open('config.json', 'r') as conf:
+            config = json.loads(conf.read())
+        discordWebhook = config['webhook']
+    except:
+        quit()
 
 # Check and see if file has been created. If not, create it.
 if os.path.isfile(filename):
     # Read the lines.
     with open(filename, 'r') as f:
-        lines = f.read()
+        lines = f.read().split('\n')
 else:
     with open(filename, 'x') as f:
         lines = []
@@ -19,9 +27,7 @@ else:
 r = requests.get(
     'https://fortniteinsider.com/?s=cheat')
 parsed_html = BeautifulSoup(r.text, 'html.parser')
-
 h3s = parsed_html.findAll('h3', {'class': 'entry-title'})
-
 for h3 in h3s:
     if 'cheat' in h3.text.lower():
         for a in h3.contents:
@@ -31,8 +37,11 @@ for h3 in h3s:
             imgs = parsed_cheat.findAll('img', {'class': 'entry-thumb'})
             for img in imgs:
                 if "Fortnite-Cheat-Sheet-Map" in img['src']:
-                    cheat_link = img['src']
+                    if int(img['height']) > 500:
+                            cheat_link = img['src']
+                            break
             if cheat_link not in lines:
+                lines.append(cheat_link)
                 data = {
                     "username": "Webhook",
                     "avatar_url": "https://i.imgur.com/4M34hi2.png",
@@ -48,4 +57,4 @@ for h3 in h3s:
 
                 # Write the link to the file to not post again.
                 with open(filename, 'a') as f:
-                    f.write(link + '\n')
+                    f.write(cheat_link + '\n')
